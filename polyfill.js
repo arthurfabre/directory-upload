@@ -261,9 +261,10 @@
 					};
 				});
 			}
-
-			for (var i = 0; i < node.children.length; i++) {
-				handleNode(node.children[i]);
+			if (node.children !== undefined) {
+				for (var i = 0; i < node.children.length; i++) {
+					handleNode(node.children[i]);
+				}
 			}
 		};
 
