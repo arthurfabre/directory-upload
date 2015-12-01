@@ -126,8 +126,7 @@
 			}
 		};
 
-		for (var i = 0; i < nodes.length; i++) {
-			var node = nodes[i];
+		var handleNode = function(node) {
 
 			if (node.tagName === 'INPUT' && node.type === 'file') {
 				// force multiple selection for default behavior
@@ -262,6 +261,14 @@
 					};
 				});
 			}
+
+			for (var i = 0; i < node.children.length; i++) {
+				handleNode(node.children[i]);
+			}
+		};
+
+		for (var i = 0; i < nodes.length; i++) {
+			handleNode(nodes[i]);
 		}
 	};
 
