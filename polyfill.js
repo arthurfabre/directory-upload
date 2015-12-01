@@ -1,14 +1,23 @@
-/**********************************
- Directory Upload Proposal Polyfill
- Author: Ali Alabbas (Microsoft)
- **********************************/
-(function() {
-	// Do not proceed with the polyfill if Directory interface is already natively available,
-	// or if webkitdirectory is not supported (i.e. not Chrome, since the polyfill only works in Chrome)
-	if (window.Directory || !('webkitdirectory' in document.createElement('input'))) {
-		return;
-	}
+/**
+ * Angular polyfill for Directory Upload Proposal.
+ *
+ * Polyfill orginally written by Ali Alabbas (Microsoft).
+ */
 
+'use strict';
+
+angular.module('dirUpload', [])
+
+/**
+ * Directive that handles actually converting the inputs.
+ */
+.directive('directory', ['$log', function($log) {
+    // Do not proceed with the polyfill if Directory interface is already natively available,
+    // or if webkitdirectory is not supported (i.e. not Chrome, since the polyfill only works in Chrome)
+    if (window.Directory || !('webkitdirectory' in document.createElement('input'))) {
+        return {};
+    }
+  
 	var directoryAttr = 'directory',
 		getFilesMethod = 'getFilesAndDirectories',
 		isSupportedProp = 'isFilesAndDirectoriesSupported',
@@ -106,7 +115,7 @@
 	/********************
 	 **** File Input ****
 	 ********************/
-	var convertInputs = function(nodes) {
+	var convertInput = function(node) {
 		var recurse = function(dir, path, fullPath, file) {
 			var pathPieces = path.split(separator);
 			var dirName = pathPieces.shift();
@@ -261,33 +270,10 @@
 					};
 				});
 			}
-			if (node.children !== undefined) {
-				for (var i = 0; i < node.children.length; i++) {
-					handleNode(node.children[i]);
-				}
-			}
 		};
 
-		for (var i = 0; i < nodes.length; i++) {
-			handleNode(nodes[i]);
-		}
+        handleNode(node);
 	};
-
-	// polyfill file inputs when the DOM loads
-	document.addEventListener('DOMContentLoaded', function(event) {
-		convertInputs(document.getElementsByTagName('input'));
-	});
-
-	// polyfill file inputs that are created dynamically and inserted into the body
-	var observer = new MutationObserver(function(mutations, observer) {
-		for (var i = 0; i < mutations.length; i++) {
-			if (mutations[i].addedNodes.length > 0) {
-				convertInputs(mutations[i].addedNodes);
-			}
-		}
-	});
-
-	observer.observe(document.body, {childList: true, subtree: true});
 
 	/***********************
 	 **** Drag and drop ****
@@ -318,4 +304,33 @@
 		// call the original method
 		return _addEventListener.apply(this, arguments);
 	};
-}());
+
+    return {
+        // This needs to run BEFORE the fileChange directive.
+        // NOTE: Post-link priorites are reversed.
+        priority: 10,
+        restrict: 'A',
+        link: function (scope, element, attrs) {
+            $log.info("Converting input");
+            $log.info(element[0]);
+            convertInput(element[0]);
+        }
+    };
+}])
+
+/**
+ * Convenience directive that will monitor a file input for changes.
+ */
+.directive('fileChange', ['$log', function($log) {
+    return {
+        // This needs to run AFTER the directory directive.
+        // NOTE: Post-link priorites are reversed.
+        priority: 20,
+        restrict: 'A',
+        link: function (scope, element, attrs) {
+            $log.info("Applying fileChange listener");
+            var onChangeHandler = scope.$eval(attrs.fileChange);
+            element.bind('change', onChangeHandler);
+        }
+    };
+}]);
