@@ -228,11 +228,6 @@ angular.module('dirUpload', [])
 
 					form.parentNode.insertBefore(node, form);
 					form.parentNode.removeChild(form);
-
-					// reset does not instantly occur, need to give it some time
-					setTimeout(function() {
-						node.dispatchEvent(new Event('change'));
-					}, 1);
 				};
 
 				shadow.querySelector('#clear').onclick = clear;
